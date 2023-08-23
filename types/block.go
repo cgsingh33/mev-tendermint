@@ -348,6 +348,9 @@ type Header struct {
 	// consensus info
 	EvidenceHash    tmbytes.HexBytes `json:"evidence_hash"`    // evidence included in the block
 	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
+
+	// encrypted Random Source
+	EncryptedRandom *EnclaveRandom `json:"encrypted_random"`
 }
 
 // Populate the Header with state-derived data.
@@ -357,7 +360,7 @@ func (h *Header) Populate(
 	timestamp time.Time, lastBlockID BlockID,
 	valHash, nextValHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
-	proposerAddress Address,
+	proposerAddress Address, encryptedRandom *EnclaveRandom,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -550,6 +553,11 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 		return Header{}, err
 	}
 
+	encRandom, err := EnclaveRandomFromProto(ph.EncryptedRandom)
+	if err != nil {
+		return Header{}, err
+	}
+
 	h.Version = ph.Version
 	h.ChainID = ph.ChainID
 	h.Height = ph.Height
@@ -565,6 +573,7 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.LastResultsHash = ph.LastResultsHash
 	h.LastCommitHash = ph.LastCommitHash
 	h.ProposerAddress = ph.ProposerAddress
+	h.EncryptedRandom = encRandom
 
 	return *h, h.ValidateBasic()
 }
